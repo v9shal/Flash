@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"flash-ticket/internal/auth"
 	"flash-ticket/internal/config"
 	"flash-ticket/internal/platform/database"
+	"flash-ticket/internal/platform/redis"
 	"log"
 	"net/http"
-
-	"flash-ticket/internal/platform/redis"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +35,7 @@ func main() {
 			"message": "OK",
 		})
 	})
-
+	auth.RegisterRoutes(router, pool)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
