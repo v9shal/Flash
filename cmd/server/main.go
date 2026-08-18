@@ -35,7 +35,7 @@ func main() {
 			"message": "OK",
 		})
 	})
-	auth.RegisterRoutes(router, pool)
+	auth.RegisterRoutes(router, pool, cfg.JwtSecret)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}

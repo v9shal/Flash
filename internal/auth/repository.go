@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -15,8 +16,8 @@ var (
 	ErrDuplicateUser = errors.New(
 		"user with this email or phone already exists",
 	)
-	 ErrUserNotFound = errors.New(
-		"user not found"
+	ErrUserNotFound = errors.New(
+		"user not found",
 	)
 
 	ErrForeignKey = errors.New(
@@ -26,6 +27,8 @@ var (
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *User) error
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	StoreRefreshToken(ctx context.Context, userId int64, tokenHash string, ExpiresAt time.Time) error
 }
 
 type postgresRepository struct {
@@ -77,7 +80,6 @@ func (r *postgresRepository) CreateUser(
 	ctx context.Context,
 	user *User,
 ) error {
-	var user User
 	query := `
 		INSERT INTO users (
 			full_name,
@@ -109,9 +111,9 @@ func (r *postgresRepository) CreateUser(
 
 	return nil
 }
-func (r *postgresRepository) GetUserByEmail ( ctx context.Context,email string )(*User,error){
+func (r *postgresRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
-	query:=`
+	query := `
 		SELECT 
 			id,
 			full_name,
@@ -124,20 +126,34 @@ func (r *postgresRepository) GetUserByEmail ( ctx context.Context,email string )
 		
 			FROM users where email=$1
 	`
-	err:=r.pool.QueryRow(ctx,query,Email).Scan(&user.ID,
-    &user.FullName,
-    &user.Email,
-    &user.Phone,
-    &user.PasswordHash,
-    &user.Role,
-    &user.CreatedAt,
-    &user.UpdatedAt,)
-	if errors.Is(err,pgx.ErrNoRows){
-		return nil,ErrUserNotFound
+	err := r.pool.QueryRow(ctx, query, email).Scan(&user.ID,
+		&user.FullName,
+		&user.Email,
+		&user.Phone,
+		&user.PasswordHash,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrUserNotFound
 	}
 	if err != nil {
-    return nil, err
+		return nil, err
+	}
+
+	return &user, err
 }
 
-	return &user,err
+func (r *postgresRepository) StoreRefreshToken(ctx context.Context, userId int64, tokenHash string, expiresAt time.Time) error {
+	query := `
+	
+	INSERT INTO refresh_tokens(
+		user_id,
+		token_hash,
+		expires_at
+		)
+		VALUES($1,$2,$3)
+	`
+	_, err := r.pool.Exec(ctx, query, userId, tokenHash, expiresAt)
+	return err
 }
