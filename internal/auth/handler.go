@@ -68,3 +68,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "login successful", "accesstoken": accessToken, "user": user})
 
 }
+func (h *AuthHandler) Me(c *gin.Context) {
+	// Extract the userID that our middleware set
+	userID, exists := c.Get("userID")
+	if !exists {
+		// This should technically never happen if the middleware did its job,
+		// but it's good Go practice to check!
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user id not found in context"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "You are authenticated!",
+		"user_id": userID,
+	})
+}
