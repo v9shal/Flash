@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flash-ticket/internal/auth"
+	"flash-ticket/internal/bookings"
 	"flash-ticket/internal/config"
 	"flash-ticket/internal/platform/database"
 	"flash-ticket/internal/platform/redis"
@@ -38,6 +39,7 @@ func main() {
 	})
 	auth.RegisterRoutes(router, pool, cfg.JwtSecret)
 	seats.SeatRoutes(router, pool, client)
+	bookings.BookingRoutes(router, pool, client, cfg.JwtSecret)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
