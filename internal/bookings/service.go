@@ -42,7 +42,7 @@ func (s *bookingService) HoldSeat(ctx context.Context, userID int64, eventID int
 	}
 	if result == 0 {
 		return nil, ErrSeatAlreadyHeld
-	} else {
+	} else if result == -1 {
 		return nil, ErrUserAlreadyHasHold
 	}
 	expirayTime := time.Now().Add(10 * time.Minute)
@@ -50,5 +50,9 @@ func (s *bookingService) HoldSeat(ctx context.Context, userID int64, eventID int
 	if err != nil {
 		seatHoldKey := fmt.Sprintf("hold:%d:%s", eventID, seatNumber)
 		userHoldKey := fmt.Sprintf("user:hold:%d", userID)
+		s.redis.Del(ctx, seatHoldKey, userHoldKey)
+		return nil, err
+
 	}
+	return booking, nil
 }
