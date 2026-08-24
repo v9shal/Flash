@@ -13,6 +13,7 @@ var ErrSeatConflit = errors.New("seat is no longer available or version mismatch
 
 type BookingRepository interface {
 	CreateHoldBooking(ctx context.Context, userID int64, eventID int64, seatID int64, expectedVersion int, price decimal.Decimal, idempotencyKey string, expiresAt time.Time) (*Booking, error)
+	CancelExpiredHolds(ctx context.Context) (int64, error)
 }
 
 type PostgresRepository struct {
@@ -100,4 +101,37 @@ func (r *PostgresRepository) CreateHoldBooking(ctx context.Context, userID int64
 	}
 	return &booking, nil
 
+}
+func (r *PostgresRepository) CancelExpiredHolds(ctx context.Context) (int64, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	query := `UPDATE seats
+SET status = 'available',
+    held_by = NULL,
+    expires_at = NULL,
+    version = version + 1
+WHERE status = 'held'
+  AND expires_at < NOW();`
+	cmdTag, err := tx.Exec(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	queryExpiredBooking := `UPDATE bookings
+SET status = 'expired'
+WHERE status = 'pending'
+  AND expires_at < NOW();`
+	_, err = tx.Exec(ctx, queryExpiredBooking)
+	if err != nil {
+		return 0, nil
+
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return cmdTag.RowsAffected(), nil
 }
