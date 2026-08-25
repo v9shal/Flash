@@ -126,7 +126,7 @@ WHERE status = 'pending'
   AND expires_at < NOW();`
 	_, err = tx.Exec(ctx, queryExpiredBooking)
 	if err != nil {
-		return 0, nil
+		return 0, err
 
 	}
 	if err := tx.Commit(ctx); err != nil {
