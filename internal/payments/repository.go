@@ -36,7 +36,7 @@ func (r *PostgresRepository) CreatePayment(ctx context.Context, bookingID int64,
 		booking_id,
 		status,
 		amount,
-		idempotency_key
+		idempotency_key,
 		created_at		
 		)
 		VALUES($1,$2,$3,$4,$5)
@@ -68,9 +68,9 @@ func (r *PostgresRepository) ConfirmPayment(
 	defer tx.Rollback(ctx)
 	var status string
 	checkpayment := `
-	SELECT status from payments where razorpay_payment_id=$1
+	SELECT status from payments where booking_id=$1
 	`
-	err = tx.QueryRow(ctx, checkpayment, paymentID).Scan(&status)
+	err = tx.QueryRow(ctx, checkpayment, bookingID).Scan(&status)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (r *PostgresRepository) ConfirmPayment(
 
 	bookingQuery := `
 		UPDATE bookings
-		SET status = 'confirmed',
+		SET status = 'confirmed'
 		WHERE id = $1
 		  AND status = 'pending'
 	`
@@ -130,7 +130,7 @@ func (r *PostgresRepository) ConfirmPayment(
 			razorpay_order_id = $2,
 			paid_at = NOW()
 		WHERE booking_id = $3
-		  AND status != 'paid'
+		  AND status != 'success'
 	`
 
 	result, err = tx.Exec(

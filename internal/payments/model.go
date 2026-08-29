@@ -28,7 +28,10 @@ type PaymentDetails struct {
 }
 
 type PaymentNotes struct {
-	BookingID string `json:"booking_id"`
+	BookingID  string `json:"booking_id"`
+	EventID    string `json:"event_id"`
+	SeatNumber string `json:"seat_number"`
+	UserID     string `json:"user_id"`
 }
 type PaymentEntitiy struct {
 	ID      string       `json:"id"`
