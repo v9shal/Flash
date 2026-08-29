@@ -6,6 +6,7 @@ import (
 	"flash-ticket/internal/bookings"
 	"flash-ticket/internal/config"
 	"flash-ticket/internal/jobs"
+	"flash-ticket/internal/payments"
 	"flash-ticket/internal/platform/database"
 	"flash-ticket/internal/platform/redis"
 	"flash-ticket/internal/seats"
@@ -43,6 +44,7 @@ func main() {
 	seats.SeatRoutes(router, pool, client)
 	bookings.BookingRoutes(router, pool, client, cfg.JwtSecret)
 	bookingRepo := bookings.NewBookingRepository(pool)
+	payments.PaymentRoutes(router, pool, client, cfg.PaymentSecret)
 	jobs.StartSeatExpiryWorker(ctx, bookingRepo, 30*time.Second)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to run server: %v", err)
