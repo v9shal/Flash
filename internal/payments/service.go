@@ -65,16 +65,19 @@ func (s *paymentService) HandleWebhookEvent(ctx context.Context, rawbody []byte,
 		userID := event.Payload.Payment.Entity.Notes.UserID
 		eventId, err := strconv.ParseInt(eventID, 10, 64)
 		if err != nil {
-			return nil
+			return fmt.Errorf("invalid event_id in notes: %w", err)
+
 		}
 
 		user_id, err := strconv.ParseInt(userID, 10, 64)
 		if err != nil {
-			return nil
+			return fmt.Errorf("invalid user_id in notes: %w", err)
+
 		}
 		bookingID, err := strconv.ParseInt(bookingIDStr, 10, 64)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid bokingId in notes: %w", err)
+
 		}
 		err = s.repo.ConfirmPayment(ctx, bookingID, event.Payload.Payment.Entity.ID, event.Payload.Payment.Entity.OrderID)
 		if err != nil {
